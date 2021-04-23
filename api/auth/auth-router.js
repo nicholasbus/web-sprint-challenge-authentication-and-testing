@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = require("../secrets/index");
 const checkUsernameExists = require("../middleware/checkUsernameExists");
+const db = require("../../data/dbConfig");
 
 router.post("/register", async (req, res, next) => {
   /*
@@ -31,15 +32,27 @@ router.post("/register", async (req, res, next) => {
     4- On FAILED registration due to the `username` being taken,
       the response body should include a string exactly as follows: "username taken".
   */
+  if (req.body.username === undefined || req.body.password === undefined) {
+    next({ status: 401, message: "username and password required" });
+  }
+
   try {
     let user = req.body;
     const hash = bcrypt.hashSync(req.body.password, 8);
     user.password = hash;
-    const newUser = await User.create(user);
-    if (!newUser) {
-      next({ status: 401, message: "could not create new user" });
+
+    const userCheck = await db("users")
+      .where({ username: req.body.username })
+      .first();
+    if (userCheck) {
+      next({ status: 401, message: "username taken" });
     } else {
-      res.status(201).json(newUser);
+      const newUser = await User.create(user);
+      if (!newUser) {
+        next({ status: 401, message: "could not create new user" });
+      } else {
+        res.status(201).json(newUser);
+      }
     }
   } catch (e) {
     next(e);
@@ -71,7 +84,9 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       the response body should include a string exactly as follows: "invalid credentials".
   */
   const { username, password } = req.body;
-
+  if (username === undefined || password === undefined) {
+    next({ status: 401, message: "username and password required" });
+  }
   if (req.user && bcrypt.compareSync(password, req.user.password)) {
     const token = makeToken(req.user);
     res.status(200).json({ message: `welcome, ${username}`, token: token });

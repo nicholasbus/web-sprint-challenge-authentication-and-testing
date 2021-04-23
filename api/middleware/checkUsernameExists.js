@@ -7,7 +7,7 @@ module.exports = async (req, res, next) => {
       .where({ username: req.body.username })
       .first();
     if (!user) {
-      next({ status: 404, message: "user could not be found" });
+      next({ status: 404, message: "invalid credentials" });
     } else {
       req.user = user;
       next();
