@@ -84,9 +84,7 @@ router.post("/login", checkUsernameExists, (req, res, next) => {
       the response body should include a string exactly as follows: "invalid credentials".
   */
   const { username, password } = req.body;
-  if (username === undefined || password === undefined) {
-    next({ status: 401, message: "username and password required" });
-  }
+
   if (req.user && bcrypt.compareSync(password, req.user.password)) {
     const token = makeToken(req.user);
     res.status(200).json({ message: `welcome, ${username}`, token: token });

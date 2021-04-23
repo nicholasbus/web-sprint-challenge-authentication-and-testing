@@ -2,6 +2,9 @@
 
 const db = require("../../data/dbConfig");
 module.exports = async (req, res, next) => {
+  if (req.body.username === undefined || req.body.password === undefined) {
+    next({ status: 401, message: "username and password required" });
+  }
   try {
     const user = await db("users")
       .where({ username: req.body.username })
